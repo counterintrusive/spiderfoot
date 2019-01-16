@@ -14,7 +14,7 @@ import json
 from sflib import SpiderFoot, SpiderFootPlugin, SpiderFootEvent
 
 class sfp_citadel(SpiderFootPlugin):
-    """Citadel Engine:Footprint,Investigate,Passive:Leaks, Dumps and Breaches:apikey:Searches citadel.pw's database of breaches."""
+    """Citadel Engine:Footprint,Investigate,Passive:Leaks, Dumps and Breaches:apikey:Searches Leak-Lookup.com's database of breaches."""
 
     # Default options
     opts = {
@@ -22,7 +22,7 @@ class sfp_citadel(SpiderFootPlugin):
         "timeout": 60
     }
     optdescs = {
-        "api_key": "Citadel.pw API key. Without this you're limited to the public API.",
+        "api_key": "Leak-Lookup API key. Without this you're limited to the public API.",
         "timeout": "Custom timeout due to heavy traffic at times."
     }
 
@@ -31,7 +31,7 @@ class sfp_citadel(SpiderFootPlugin):
     def setup(self, sfc, userOpts=dict()):
         self.sf = sfc
         self.results = dict()
-        self.__dataSource__ = "Citadel.pw"
+        self.__dataSource__ = "Leak-Lookup.com"
 
         for opt in userOpts.keys():
             self.opts[opt] = userOpts[opt]
@@ -63,13 +63,14 @@ class sfp_citadel(SpiderFootPlugin):
                 self.results[eventData] = True
 
             if self.opts['api_key']:
-                url = "http://citadel.pw/api.php?api=" + self.opts['api_key'] + \
-                      "&query="
+                key = self.opts['api_key']
             else:
-                public_api = "6ce4f0a0c7b776809adb0f90473ea0e4"
-                url = "http://citadel.pw/api.php?api=" + public_api + "&query="
-
-            res = self.sf.fetchUrl(url + eventData, timeout=self.opts['timeout'], 
+                key = "6ce4f0a0c7b776809adb0f90473ea0e4"
+                
+            url = "http://leak-lookup.com/api/search"
+            postdata = "type=email_address&key={}&query={}".format( self.opts['api_key'], eventData )
+            
+            res = self.sf.fetchUrl(url, postData=postdata, timeout=self.opts['timeout'], 
                                    useragent=self.opts['_useragent'])
 
             if res['content'] is None or "{error" in res['content']:
